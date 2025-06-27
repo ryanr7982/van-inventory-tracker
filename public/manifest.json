@@ -1,0 +1,18 @@
+{
+  "id": "/van",
+
+  "name": "Van Inventory Tracker",
+  "short_name": "Inventory",
+  "start_url": "/van",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1f2937",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
