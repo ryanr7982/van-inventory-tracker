@@ -17,17 +17,17 @@ export default function VanPage() {
     else setItems(data || [])
   }
 
+  const updateQuantity = async (id: string, newQty: number) => {
+    await supabase.from('inventory').update({ quantity: newQty }).eq('id', id)
+    fetchItems()
+  }
+
   useEffect(() => {
     fetchItems()
-
-    const interval = setInterval(() => {
-      fetchItems()
-    }, 3000)
-
+    const interval = setInterval(fetchItems, 3000)
     return () => clearInterval(interval)
   }, [])
 
-  // Detect PWA install availability
   useEffect(() => {
     const handler = (e: any) => {
       console.log("🔥 beforeinstallprompt event fired")
@@ -66,8 +66,28 @@ export default function VanPage() {
       ) : (
         <ul className="space-y-2">
           {items.map(item => (
-            <li key={item.id} className="border p-2 rounded">
-              <strong>{item.name}</strong>: {item.quantity}
+            <li key={item.id} className="border p-2 rounded flex justify-between items-center">
+              <div>
+                <strong>{item.name}</strong>: {item.quantity}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                  className="px-2 py-1 bg-green-500 text-white rounded"
+                >
+                  +
+                </button>
+                <button
+                  onClick={() => {
+                    if (item.quantity > 0) {
+                      updateQuantity(item.id, item.quantity - 1)
+                    }
+                  }}
+                  className="px-2 py-1 bg-red-500 text-white rounded"
+                >
+                  –
+                </button>
+              </div>
             </li>
           ))}
         </ul>
@@ -75,6 +95,7 @@ export default function VanPage() {
     </div>
   )
 }
+
 
 
 

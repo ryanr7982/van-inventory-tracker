@@ -18,9 +18,17 @@ export default function DashboardPage() {
   }
 
   const addItem = async () => {
-    await supabase.from('inventory').insert({ name, quantity: qty })
-    setName('')
-    setQty(1)
+    if (name && qty >= 0) {
+      await supabase.from('inventory').insert({ name, quantity: qty })
+      setName('')
+      setQty(1)
+      fetchItems()
+    }
+  }
+
+  const updateQuantity = async (id: string, newQty: number) => {
+    await supabase.from('inventory').update({ quantity: newQty }).eq('id', id)
+    fetchItems()
   }
 
   useEffect(() => {
@@ -57,39 +65,55 @@ export default function DashboardPage() {
         </button>
       </div>
       <ul className="space-y-2">
-  {items.map(item => (
-    <li key={item.id} className="border p-2 rounded flex justify-between items-center">
-      <div>
-        <strong>{item.name}</strong>: {item.quantity}
-      </div>
-      <div className="flex gap-2">
-        <button
-          onClick={async () => {
-            const newQty = prompt('New quantity for ' + item.name, item.quantity)
-            if (newQty !== null) {
-              await supabase.from('inventory').update({ quantity: Number(newQty) }).eq('id', item.id)
-              fetchItems()
-            }
-          }}
-          className="px-2 py-1 bg-yellow-500 text-white text-sm rounded"
-        >
-          Edit
-        </button>
-        <button
-          onClick={async () => {
-            if (confirm(`Delete "${item.name}"?`)) {
-              await supabase.from('inventory').delete().eq('id', item.id)
-              fetchItems()
-            }
-          }}
-          className="px-2 py-1 bg-red-600 text-white text-sm rounded"
-        >
-          Delete
-        </button>
-      </div>
-    </li>
-  ))}
-</ul>
+        {items.map(item => (
+          <li key={item.id} className="border p-2 rounded flex justify-between items-center">
+            <div>
+              <strong>{item.name}</strong>: {item.quantity}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                className="px-2 py-1 bg-green-500 text-white text-sm rounded"
+              >
+                +
+              </button>
+              <button
+                onClick={() => {
+                  if (item.quantity > 0) {
+                    updateQuantity(item.id, item.quantity - 1)
+                  }
+                }}
+                className="px-2 py-1 bg-red-500 text-white text-sm rounded"
+              >
+                –
+              </button>
+              <button
+                onClick={async () => {
+                  const newQty = prompt('New quantity for ' + item.name, item.quantity)
+                  if (newQty !== null) {
+                    await supabase.from('inventory').update({ quantity: Number(newQty) }).eq('id', item.id)
+                    fetchItems()
+                  }
+                }}
+                className="px-2 py-1 bg-yellow-500 text-white text-sm rounded"
+              >
+                Edit
+              </button>
+              <button
+                onClick={async () => {
+                  if (confirm(`Delete "${item.name}"?`)) {
+                    await supabase.from('inventory').delete().eq('id', item.id)
+                    fetchItems()
+                  }
+                }}
+                className="px-2 py-1 bg-red-600 text-white text-sm rounded"
+              >
+                Delete
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }
