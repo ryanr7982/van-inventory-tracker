@@ -68,47 +68,51 @@ export default function VanPage() {
         </label>
       </div>
 
-      <ul className="space-y-2">
-        {paginatedItems.map(item => (
-          <li key={item.id} className="border p-2 rounded flex justify-between items-center">
-            <div>
-              <strong>{item.name}</strong>:
-              <span className={item.quantity < 5 ? 'text-red-600 font-bold' : ''}>
-                {' '}{item.quantity}
-              </span>
-              {item.quantity < 5 && (
-                <span className="ml-2 inline-block px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded">
-                  Low stock
+      {paginatedItems.length === 0 ? (
+        <p className="text-gray-500">No items match your criteria.</p>
+      ) : (
+        <ul className="space-y-2">
+          {paginatedItems.map(item => (
+            <li key={item.id} className="border p-2 rounded flex justify-between items-center">
+              <div className="flex flex-wrap items-center gap-2">
+                <strong>{item.name}</strong>:
+                <span className={item.quantity < 5 ? 'text-red-600 font-bold' : ''}>
+                  {item.quantity}
                 </span>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                className="px-2 py-1 bg-green-500 text-white text-sm rounded"
-              >
-                +
-              </button>
-              <button
-                onClick={() => {
-                  if (item.quantity > 0) {
-                    updateQuantity(item.id, item.quantity - 1)
-                  }
-                }}
-                className="px-2 py-1 bg-red-500 text-white text-sm rounded"
-              >
-                –
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
+                {item.quantity < 5 && (
+                  <span className="inline-block px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded">
+                    Low stock
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                  className="px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded"
+                >
+                  +
+                </button>
+                <button
+                  onClick={() => {
+                    if (item.quantity > 0) {
+                      updateQuantity(item.id, item.quantity - 1)
+                    }
+                  }}
+                  className="px-2 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded"
+                >
+                  –
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
 
       <div className="flex gap-2 mt-4">
         <button
           onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
           disabled={currentPage === 1}
-          className="px-2 py-1 bg-gray-300 rounded disabled:opacity-50"
+          className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50"
         >
           Prev
         </button>
@@ -118,7 +122,7 @@ export default function VanPage() {
             setCurrentPage(p => Math.min(p + 1, maxPage))
           }}
           disabled={currentPage === Math.ceil(filteredItems.length / itemsPerPage)}
-          className="px-2 py-1 bg-gray-300 rounded disabled:opacity-50"
+          className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50"
         >
           Next
         </button>
