@@ -69,23 +69,6 @@ export default function DashboardPage() {
     doc.save('inventory.pdf')
   }
 
-  const handleImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      const text = await e.target.files[0].text()
-      const rows = text.split('\n').slice(1) // skip header
-      for (const row of rows) {
-        const [name, quantity] = row.split(',')
-        if (name && quantity) {
-          await supabase.from('inventory').insert({
-            name: name.trim(),
-            quantity: Number(quantity)
-          })
-        }
-      }
-      fetchItems()
-    }
-  }
-
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
@@ -108,12 +91,6 @@ export default function DashboardPage() {
         <button onClick={addItem} className="bg-green-600 text-white px-4 py-2 rounded">
           Add
         </button>
-        <input
-          type="file"
-          accept=".csv"
-          onChange={handleImportCSV}
-          className="p-2 border rounded"
-        />
         <button onClick={handleExportCSV} className="px-4 py-2 bg-blue-600 text-white rounded">
           Export CSV
         </button>
@@ -126,7 +103,13 @@ export default function DashboardPage() {
         {items.map(item => (
           <li key={item.id} className="border p-2 rounded flex justify-between items-center">
             <div>
-              <strong>{item.name}</strong>: {item.quantity}
+              <strong>{item.name}</strong>:
+              <span className={item.quantity < 5 ? 'text-red-600 font-bold' : ''}> {item.quantity}</span>
+              {item.quantity < 5 && (
+                <span className="ml-2 inline-block px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded">
+                  Low stock
+                </span>
+              )}
             </div>
             <div className="flex gap-2">
               <button
@@ -145,29 +128,6 @@ export default function DashboardPage() {
               >
                 –
               </button>
-              <button
-                onClick={async () => {
-                  const newQty = prompt('New quantity for ' + item.name, item.quantity)
-                  if (newQty !== null) {
-                    await supabase.from('inventory').update({ quantity: Number(newQty) }).eq('id', item.id)
-                    fetchItems()
-                  }
-                }}
-                className="px-2 py-1 bg-yellow-500 text-white text-sm rounded"
-              >
-                Edit
-              </button>
-              <button
-                onClick={async () => {
-                  if (confirm(`Delete "${item.name}"?`)) {
-                    await supabase.from('inventory').delete().eq('id', item.id)
-                    fetchItems()
-                  }
-                }}
-                className="px-2 py-1 bg-red-600 text-white text-sm rounded"
-              >
-                Delete
-              </button>
             </div>
           </li>
         ))}
@@ -175,4 +135,3 @@ export default function DashboardPage() {
     </div>
   )
 }
-

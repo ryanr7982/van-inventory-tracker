@@ -68,7 +68,13 @@ export default function VanPage() {
           {items.map(item => (
             <li key={item.id} className="border p-2 rounded flex justify-between items-center">
               <div>
-                <strong>{item.name}</strong>: {item.quantity}
+                <strong>{item.name}</strong>:
+                <span className={item.quantity < 5 ? 'text-red-600 font-bold' : ''}> {item.quantity}</span>
+                {item.quantity < 5 && (
+                  <span className="ml-2 inline-block px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded">
+                    Low stock
+                  </span>
+                )}
               </div>
               <div className="flex gap-2">
                 <button
@@ -95,6 +101,7 @@ export default function VanPage() {
     </div>
   )
 }
+
 
 
 
