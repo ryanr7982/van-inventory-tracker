@@ -75,6 +75,27 @@ export default function DashboardPage() {
 
       <div className="mb-4 flex gap-2 flex-wrap">
         <input
+  type="file"
+  accept=".csv"
+  onChange={async (e) => {
+    if (e.target.files?.[0]) {
+      const text = await e.target.files[0].text()
+      const rows = text.split('\n').slice(1) // skip header
+      for (const row of rows) {
+        const [name, quantity] = row.split(',')
+        if (name && quantity) {
+          await supabase.from('inventory').insert({
+            name: name.trim(),
+            quantity: Number(quantity)
+          })
+        }
+      }
+      fetchItems()
+    }
+  }}
+  className="p-2 border rounded"
+/>
+        <input
           type="text"
           placeholder="Item Name"
           value={name}
