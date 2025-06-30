@@ -9,7 +9,10 @@ const supabase = createClient(
 
 export default function VanPage() {
   const [items, setItems] = useState<any[]>([])
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+  const [searchTerm, setSearchTerm] = useState('')
+  const [showLowStockOnly, setShowLowStockOnly] = useState(false)
 
   const fetchItems = async () => {
     const { data, error } = await supabase.from('inventory').select('*')
@@ -28,78 +31,98 @@ export default function VanPage() {
     return () => clearInterval(interval)
   }, [])
 
-  useEffect(() => {
-    const handler = (e: any) => {
-      console.log("🔥 beforeinstallprompt event fired")
-      e.preventDefault()
-      setDeferredPrompt(e)
-    }
-    window.addEventListener('beforeinstallprompt', handler)
-    return () => window.removeEventListener('beforeinstallprompt', handler)
-  }, [])
+  const filteredItems = items
+    .filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    .filter(item => (showLowStockOnly ? item.quantity < 5 : true))
 
-  const handleInstallClick = () => {
-    if (!deferredPrompt) return
-    console.log("💡 Prompting install")
-    deferredPrompt.prompt()
-    deferredPrompt.userChoice.then(choice => {
-      console.log("📦 User response:", choice)
-      setDeferredPrompt(null)
-    })
-  }
+  const paginatedItems = filteredItems.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
 
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Installer Inventory View</h1>
 
-      {deferredPrompt && (
-        <button
-          onClick={handleInstallClick}
-          className="mb-4 px-4 py-2 bg-green-600 text-white rounded"
-        >
-          Install App
-        </button>
-      )}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <input
+          type="text"
+          placeholder="Search items"
+          value={searchTerm}
+          onChange={e => {
+            setSearchTerm(e.target.value)
+            setCurrentPage(1)
+          }}
+          className="p-2 border rounded"
+        />
+        <label className="flex items-center gap-1">
+          <input
+            type="checkbox"
+            checked={showLowStockOnly}
+            onChange={e => {
+              setShowLowStockOnly(e.target.checked)
+              setCurrentPage(1)
+            }}
+          />
+          Low stock only
+        </label>
+      </div>
 
-      {items.length === 0 ? (
-        <p className="text-gray-500">No items in inventory yet.</p>
-      ) : (
-        <ul className="space-y-2">
-          {items.map(item => (
-      <li key={item.id} className="border p-2 rounded flex justify-between items-center">
-  <div>
-    <strong>{item.name}</strong>:
-    <span className={item.quantity < 5 ? 'text-red-600 font-bold' : ''}>
-      {' '}{item.quantity}
-    </span>
-    {item.quantity < 5 && (
-      <span className="ml-2 inline-block px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded">
-        Low stock
-      </span>
-    )}
-  </div>
-  <div className="flex gap-2">
-    <button
-      onClick={() => updateQuantity(item.id, item.quantity + 1)}
-      className="px-2 py-1 bg-green-500 text-white rounded"
-    >
-      +
-    </button>
-    <button
-      onClick={() => {
-        if (item.quantity > 0) {
-          updateQuantity(item.id, item.quantity - 1)
-        }
-      }}
-      className="px-2 py-1 bg-red-500 text-white rounded"
-    >
-      –
-    </button>
-  </div>
-</li>
-          ))}
-        </ul>
-      )}
+      <ul className="space-y-2">
+        {paginatedItems.map(item => (
+          <li key={item.id} className="border p-2 rounded flex justify-between items-center">
+            <div>
+              <strong>{item.name}</strong>:
+              <span className={item.quantity < 5 ? 'text-red-600 font-bold' : ''}>
+                {' '}{item.quantity}
+              </span>
+              {item.quantity < 5 && (
+                <span className="ml-2 inline-block px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded">
+                  Low stock
+                </span>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                className="px-2 py-1 bg-green-500 text-white text-sm rounded"
+              >
+                +
+              </button>
+              <button
+                onClick={() => {
+                  if (item.quantity > 0) {
+                    updateQuantity(item.id, item.quantity - 1)
+                  }
+                }}
+                className="px-2 py-1 bg-red-500 text-white text-sm rounded"
+              >
+                –
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      <div className="flex gap-2 mt-4">
+        <button
+          onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+          disabled={currentPage === 1}
+          className="px-2 py-1 bg-gray-300 rounded disabled:opacity-50"
+        >
+          Prev
+        </button>
+        <button
+          onClick={() => {
+            const maxPage = Math.ceil(filteredItems.length / itemsPerPage)
+            setCurrentPage(p => Math.min(p + 1, maxPage))
+          }}
+          disabled={currentPage === Math.ceil(filteredItems.length / itemsPerPage)}
+          className="px-2 py-1 bg-gray-300 rounded disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
     </div>
   )
 }
