@@ -73,17 +73,22 @@ export default function VanPage() {
       ) : (
         <ul className="space-y-2">
           {paginatedItems.map(item => (
-            <li key={item.id} className="border p-2 rounded flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+            <li
+              key={item.id}
+              className="border p-2 rounded flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2"
+            >
               <div className="flex flex-wrap items-center gap-2">
                 <strong>{item.name}</strong>:
-                <span className={item.quantity < 5 ? 'text-red-600 font-bold' : ''}>
-                  {item.quantity}
-                </span>
-                {item.quantity < 5 && (
-                  <span className="inline-block px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded">
-                    Low stock
+                <div className="flex items-center gap-2">
+                  <span className={item.quantity < 5 ? 'text-red-600 font-bold' : ''}>
+                    {item.quantity}
                   </span>
-                )}
+                  {item.quantity < 5 && (
+                    <span className="inline-block px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded">
+                      Low stock
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="flex gap-2">
                 <button
@@ -130,6 +135,7 @@ export default function VanPage() {
     </div>
   )
 }
+
 
 
 
