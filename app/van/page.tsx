@@ -66,35 +66,37 @@ export default function VanPage() {
       ) : (
         <ul className="space-y-2">
           {items.map(item => (
-            <li key={item.id} className="border p-2 rounded flex justify-between items-center">
-              <div>
-                <strong>{item.name}</strong>:
-                <span className={item.quantity < 5 ? 'text-red-600 font-bold' : ''}> {item.quantity}</span>
-                {item.quantity < 5 && (
-                  <span className="ml-2 inline-block px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded">
-                    Low stock
-                  </span>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                  className="px-2 py-1 bg-green-500 text-white rounded"
-                >
-                  +
-                </button>
-                <button
-                  onClick={() => {
-                    if (item.quantity > 0) {
-                      updateQuantity(item.id, item.quantity - 1)
-                    }
-                  }}
-                  className="px-2 py-1 bg-red-500 text-white rounded"
-                >
-                  –
-                </button>
-              </div>
-            </li>
+      <li key={item.id} className="border p-2 rounded flex justify-between items-center">
+  <div>
+    <strong>{item.name}</strong>:
+    <span className={item.quantity < 5 ? 'text-red-600 font-bold' : ''}>
+      {' '}{item.quantity}
+    </span>
+    {item.quantity < 5 && (
+      <span className="ml-2 inline-block px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded">
+        Low stock
+      </span>
+    )}
+  </div>
+  <div className="flex gap-2">
+    <button
+      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+      className="px-2 py-1 bg-green-500 text-white rounded"
+    >
+      +
+    </button>
+    <button
+      onClick={() => {
+        if (item.quantity > 0) {
+          updateQuantity(item.id, item.quantity - 1)
+        }
+      }}
+      className="px-2 py-1 bg-red-500 text-white rounded"
+    >
+      –
+    </button>
+  </div>
+</li>
           ))}
         </ul>
       )}
