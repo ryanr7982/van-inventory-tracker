@@ -8,17 +8,21 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-export default function LoginPage() {
+export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
 
-  const handleLogin = async () => {
-    const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password })
+  const handleSignup = async () => {
+    const { data: signUpData, error } = await supabase.auth.signUp({
+      email,
+      password
+    })
+
     if (error) {
       setError(error.message)
     } else {
-      const user = signInData.user
+      const user = signUpData.user
       if (user) {
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
@@ -44,7 +48,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6">
-      <h2 className="text-xl font-bold mb-4">Login</h2>
+      <h2 className="text-xl font-bold mb-4">Sign Up</h2>
       <input
         type="email"
         value={email}
@@ -60,21 +64,18 @@ export default function LoginPage() {
         placeholder="Password"
       />
       <button
-        onClick={handleLogin}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        onClick={handleSignup}
+        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
       >
-        Log In
+        Sign Up
       </button>
       {error && <p className="text-red-500 mt-2">{error}</p>}
       <p className="mt-2 text-sm">
-        Don’t have an account?{' '}
-        <Link href="/signup" className="text-blue-600 hover:underline">
-          Sign up
+        Already have an account?{' '}
+        <Link href="/login" className="text-blue-600 hover:underline">
+          Log in
         </Link>
       </p>
     </div>
   )
 }
-
-
-
