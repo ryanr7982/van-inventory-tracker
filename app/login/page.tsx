@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
@@ -11,33 +11,29 @@ export default function LoginPage() {
   const [email, setEmail] = useState('ryan.roberson@powershades.com')
   const [password, setPassword] = useState('Powershades1!')
   const [error, setError] = useState('')
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
 
   const handleLogin = async () => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
       setError(error.message)
     } else {
-      window.location.href = '/van'
-    }
-  }
+      const user = signInData.user
+      if (user) {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single()
 
-  useEffect(() => {
-    const handler = (e: any) => {
-      e.preventDefault()
-      setDeferredPrompt(e)
-      console.log('✅ beforeinstallprompt captured')
+        if (profileError) {
+          console.error('Error fetching profile:', profileError)
+          setError(profileError.message)
+        } else {
+          window.localStorage.setItem('userRole', profile.role)
+          window.location.href = '/van'
+        }
+      }
     }
-    window.addEventListener('beforeinstallprompt', handler)
-    return () => window.removeEventListener('beforeinstallprompt', handler)
-  }, [])
-
-  const handleInstallClick = () => {
-    if (!deferredPrompt) return
-    deferredPrompt.prompt()
-    deferredPrompt.userChoice.then(() => {
-      setDeferredPrompt(null)
-    })
   }
 
   return (
@@ -61,16 +57,8 @@ export default function LoginPage() {
         Log In
       </button>
       {error && <p className="text-red-500 mt-2">{error}</p>}
-
-      {deferredPrompt && (
-        <button
-          onClick={handleInstallClick}
-          className="bg-green-600 text-white px-4 py-2 rounded mt-4"
-        >
-          Install App
-        </button>
-      )}
     </div>
   )
 }
+
 

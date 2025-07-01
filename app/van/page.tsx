@@ -14,6 +14,7 @@ export default function VanPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [showLowStockOnly, setShowLowStockOnly] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<string | null>(null)
+  const [userRole, setUserRole] = useState<string | null>(null)
 
   const fetchItems = async () => {
     const { data, error } = await supabase.from('inventory').select('*')
@@ -30,10 +31,22 @@ export default function VanPage() {
     fetchItems()
   }
 
+  const deleteItem = async (id: string, name: string) => {
+    if (confirm(`Delete "${name}"?`)) {
+      await supabase.from('inventory').delete().eq('id', id)
+      fetchItems()
+    }
+  }
+
   useEffect(() => {
     fetchItems()
     const interval = setInterval(fetchItems, 3000)
     return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    const role = window.localStorage.getItem('userRole')
+    setUserRole(role)
   }, [])
 
   const filteredItems = items
@@ -112,6 +125,14 @@ export default function VanPage() {
                 >
                   –
                 </button>
+                {userRole === 'admin' && (
+                  <button
+                    onClick={() => deleteItem(item.id, item.name)}
+                    className="px-3 py-2 bg-red-700 hover:bg-red-800 text-white text-sm rounded"
+                  >
+                    Delete
+                  </button>
+                )}
               </div>
             </li>
           ))}

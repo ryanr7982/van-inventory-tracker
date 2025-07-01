@@ -16,6 +16,12 @@ export default function DashboardPage() {
   const itemsPerPage = 10
   const [searchTerm, setSearchTerm] = useState('')
   const [showLowStockOnly, setShowLowStockOnly] = useState(false)
+  const [userRole, setUserRole] = useState<string | null>(null)
+
+  useEffect(() => {
+    const role = window.localStorage.getItem('userRole')
+    setUserRole(role)
+  }, [])
 
   const fetchItems = async () => {
     const { data } = await supabase.from('inventory').select('*')
@@ -23,7 +29,7 @@ export default function DashboardPage() {
   }
 
   const addItem = async () => {
-    if (name && qty >= 0) {
+    if (name && qty >= 0 && userRole === 'admin') {
       await supabase.from('inventory').insert({ name, quantity: qty })
       setName('')
       setQty(1)
@@ -34,6 +40,13 @@ export default function DashboardPage() {
   const updateQuantity = async (id: string, newQty: number) => {
     await supabase.from('inventory').update({ quantity: newQty }).eq('id', id)
     fetchItems()
+  }
+
+  const deleteItem = async (id: string, name: string) => {
+    if (userRole === 'admin' && confirm(`Delete "${name}"?`)) {
+      await supabase.from('inventory').delete().eq('id', id)
+      fetchItems()
+    }
   }
 
   useEffect(() => {
@@ -84,7 +97,7 @@ export default function DashboardPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
+      <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
 
       <div className="mb-4 flex flex-wrap gap-2">
         <input
@@ -108,50 +121,55 @@ export default function DashboardPage() {
           />
           Low stock only
         </label>
-        <input
-          type="file"
-          accept=".csv"
-          onChange={async (e) => {
-            if (e.target.files?.[0]) {
-              const text = await e.target.files[0].text()
-              const rows = text.split('\n').slice(1)
-              for (const row of rows) {
-                const [name, quantity] = row.split(',')
-                if (name && quantity) {
-                  await supabase.from('inventory').insert({
-                    name: name.trim(),
-                    quantity: Number(quantity)
-                  })
+
+        {userRole === 'admin' && (
+          <>
+            <input
+              type="file"
+              accept=".csv"
+              onChange={async (e) => {
+                if (e.target.files?.[0]) {
+                  const text = await e.target.files[0].text()
+                  const rows = text.split('\n').slice(1)
+                  for (const row of rows) {
+                    const [name, quantity] = row.split(',')
+                    if (name && quantity) {
+                      await supabase.from('inventory').insert({
+                        name: name.trim(),
+                        quantity: Number(quantity)
+                      })
+                    }
+                  }
+                  fetchItems()
                 }
-              }
-              fetchItems()
-            }
-          }}
-          className="p-2 border rounded"
-        />
-        <input
-          type="text"
-          placeholder="Item Name"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          className="p-2 border rounded"
-        />
-        <input
-          type="number"
-          placeholder="Qty"
-          value={qty}
-          onChange={e => setQty(Number(e.target.value))}
-          className="p-2 border rounded w-20"
-        />
-        <button onClick={addItem} className="bg-green-600 text-white px-4 py-2 rounded">
-          Add
-        </button>
-        <button onClick={handleExportCSV} className="bg-blue-600 text-white px-4 py-2 rounded">
-          Export CSV
-        </button>
-        <button onClick={handleExportPDF} className="bg-purple-600 text-white px-4 py-2 rounded">
-          Export PDF
-        </button>
+              }}
+              className="p-2 border rounded"
+            />
+            <input
+              type="text"
+              placeholder="Item Name"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              className="p-2 border rounded"
+            />
+            <input
+              type="number"
+              placeholder="Qty"
+              value={qty}
+              onChange={e => setQty(Number(e.target.value))}
+              className="p-2 border rounded w-20"
+            />
+            <button onClick={addItem} className="bg-green-600 text-white px-4 py-2 rounded">
+              Add
+            </button>
+            <button onClick={handleExportCSV} className="bg-blue-600 text-white px-4 py-2 rounded">
+              Export CSV
+            </button>
+            <button onClick={handleExportPDF} className="bg-purple-600 text-white px-4 py-2 rounded">
+              Export PDF
+            </button>
+          </>
+        )}
       </div>
 
       <ul className="space-y-2">
@@ -185,6 +203,14 @@ export default function DashboardPage() {
               >
                 –
               </button>
+              {userRole === 'admin' && (
+                <button
+                  onClick={() => deleteItem(item.id, item.name)}
+                  className="px-2 py-1 bg-red-700 text-white text-sm rounded"
+                >
+                  Delete
+                </button>
+              )}
             </div>
           </li>
         ))}
@@ -212,3 +238,4 @@ export default function DashboardPage() {
     </div>
   )
 }
+
