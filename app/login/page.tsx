@@ -19,18 +19,23 @@ export default function LoginPage() {
     } else {
       const user = signInData.user
       if (user) {
-        const { data: profile, error: profileError } = await supabase
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('role')
           .eq('id', user.id)
           .single()
 
-        if (profileError) {
+        if (profileError || !profileData) {
           console.error('Error fetching profile:', profileError)
-          setError(profileError.message)
+          setError('Profile not found or role missing')
         } else {
-          window.localStorage.setItem('userRole', profile.role)
-          window.location.href = '/van'
+          const role = profileData.role
+          window.localStorage.setItem('userRole', role)
+          if (role === 'admin') {
+            window.location.href = '/dashboard'
+          } else {
+            window.location.href = '/van'
+          }
         }
       }
     }
@@ -43,22 +48,26 @@ export default function LoginPage() {
         type="email"
         value={email}
         onChange={e => setEmail(e.target.value)}
-        className="border p-2 mb-2 w-64"
+        className="border p-2 mb-2 w-64 rounded"
         placeholder="Email"
       />
       <input
         type="password"
         value={password}
         onChange={e => setPassword(e.target.value)}
-        className="border p-2 mb-2 w-64"
+        className="border p-2 mb-2 w-64 rounded"
         placeholder="Password"
       />
-      <button onClick={handleLogin} className="bg-blue-600 text-white px-4 py-2 rounded mb-2">
+      <button
+        onClick={handleLogin}
+        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+      >
         Log In
       </button>
       {error && <p className="text-red-500 mt-2">{error}</p>}
     </div>
   )
 }
+
 
 
