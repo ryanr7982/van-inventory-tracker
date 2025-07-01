@@ -13,11 +13,16 @@ export default function VanPage() {
   const itemsPerPage = 10
   const [searchTerm, setSearchTerm] = useState('')
   const [showLowStockOnly, setShowLowStockOnly] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null)
 
   const fetchItems = async () => {
     const { data, error } = await supabase.from('inventory').select('*')
-    if (error) console.error('Error fetching inventory:', error)
-    else setItems(data || [])
+    if (error) {
+      console.error('Error fetching inventory:', error)
+    } else {
+      setItems(data || [])
+      setLastUpdated(new Date().toLocaleString())
+    }
   }
 
   const updateQuantity = async (id: string, newQty: number) => {
@@ -132,6 +137,12 @@ export default function VanPage() {
           Next
         </button>
       </div>
+
+      {lastUpdated && (
+        <p className="text-xs text-gray-500 text-center mt-2">
+          Last updated: {lastUpdated}
+        </p>
+      )}
     </div>
   )
 }
