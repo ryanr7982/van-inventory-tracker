@@ -8,8 +8,8 @@ const supabase = createClient(
 )
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('ryan.roberson@powershades.com')
-  const [password, setPassword] = useState('Powershades1!')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
 
   const handleLogin = async () => {
