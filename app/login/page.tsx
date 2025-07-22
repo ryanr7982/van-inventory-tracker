@@ -79,6 +79,15 @@ export default function LoginPage() {
       </button>
       {error && <p className="text-red-500 mt-2">{error}</p>}
       <p className="mt-2 text-sm">
+        <p className="mt-2 text-sm">
+  <a
+    href="/reset-password"
+    className="text-blue-600 hover:underline"
+  >
+    Forgot password?
+  </a>
+</p>
+
         Don’t have an account?{' '}
         <Link href="/signup" className="text-blue-600 hover:underline">
           Sign up
