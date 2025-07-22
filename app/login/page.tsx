@@ -8,6 +8,11 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
+// Utility: wait for n ms
+function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -20,23 +25,30 @@ export default function LoginPage() {
     } else {
       const user = signInData.user
       if (user) {
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single()
-
-        if (profileError || !profileData) {
-          console.error('Error fetching profile:', profileError)
+        let attempts = 0
+        let profileData = null
+        let profileError = null
+        while (attempts < 5 && !profileData) {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+          profileData = data
+          profileError = error
+          if (!profileData) await sleep(500) // Wait 0.5 sec and try again
+          attempts++
+        }
+        if (!profileData) {
           setError('Profile not found or role missing')
+          return
+        }
+        const role = profileData.role
+        window.localStorage.setItem('userRole', role)
+        if (role === 'admin') {
+          window.location.href = '/dashboard'
         } else {
-          const role = profileData.role
-          window.localStorage.setItem('userRole', role)
-          if (role === 'admin') {
-            window.location.href = '/dashboard'
-          } else {
-            window.location.href = '/van'
-          }
+          window.location.href = '/van'
         }
       }
     }
