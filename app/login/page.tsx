@@ -18,41 +18,44 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
 
-  const handleLogin = async () => {
-    const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
-      setError(error.message)
-    } else {
-      const user = signInData.user
-      if (user) {
-        let attempts = 0
-        let profileData = null
-        let profileError = null
-        while (attempts < 5 && !profileData) {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single()
-          profileData = data
-          profileError = error
-          if (!profileData) await sleep(500) // Wait 0.5 sec and try again
-          attempts++
-        }
-        if (!profileData) {
-          setError('Profile not found or role missing')
-          return
-        }
-        const role = profileData.role
-        window.localStorage.setItem('userRole', role)
-        if (role === 'admin') {
-          window.location.href = '/dashboard'
-        } else {
-          window.location.href = '/van'
-        }
+ const handleLogin = async () => {
+  const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password })
+  if (error) {
+    setError(error.message)
+  } else {
+    const user = signInData.user
+    if (user) {
+      console.log('Logged in user:', user)
+      let attempts = 0
+      let profileData = null
+      let profileError = null
+      while (attempts < 5 && !profileData) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+        profileData = data
+        profileError = error
+        console.log(`Profile lookup [attempt ${attempts + 1}]:`, { data, error, id: user.id })
+        if (!profileData) await sleep(500)
+        attempts++
+      }
+      if (!profileData) {
+        setError('Profile not found or role missing')
+        return
+      }
+      const role = profileData.role
+      window.localStorage.setItem('userRole', role)
+      if (role === 'admin') {
+        window.location.href = '/dashboard'
+      } else {
+        window.location.href = '/van'
       }
     }
   }
+}
+
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6">

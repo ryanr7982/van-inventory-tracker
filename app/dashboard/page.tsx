@@ -18,6 +18,18 @@ export default function DashboardPage() {
   const [showLowStockOnly, setShowLowStockOnly] = useState(false)
   const [userRole, setUserRole] = useState<string | null>(null)
 
+  // --- Utility: Log activity to activity_log table ---
+  const logActivity = async (action: string, itemName: string, quantity: number) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    await supabase.from('activity_log').insert({
+      user_id: user.id,
+      action,
+      item_name: itemName,
+      quantity
+    })
+  }
+
   useEffect(() => {
     const role = window.localStorage.getItem('userRole')
     setUserRole(role)
@@ -31,20 +43,23 @@ export default function DashboardPage() {
   const addItem = async () => {
     if (name && qty >= 0 && userRole === 'admin') {
       await supabase.from('inventory').insert({ name, quantity: qty })
+      await logActivity('added', name, qty)
       setName('')
       setQty(1)
       fetchItems()
     }
   }
 
-  const updateQuantity = async (id: string, newQty: number) => {
+  const updateQuantity = async (id: string, newQty: number, itemName: string) => {
     await supabase.from('inventory').update({ quantity: newQty }).eq('id', id)
+    await logActivity('updated', itemName, newQty)
     fetchItems()
   }
 
-  const deleteItem = async (id: string, name: string) => {
+  const deleteItem = async (id: string, name: string, quantity: number) => {
     if (userRole === 'admin' && confirm(`Delete "${name}"?`)) {
       await supabase.from('inventory').delete().eq('id', id)
+      await logActivity('deleted', name, quantity)
       fetchItems()
     }
   }
@@ -96,7 +111,7 @@ export default function DashboardPage() {
   )
 
   return (
-    <div className="p-6">
+    <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
 
       <div className="mb-4 flex flex-wrap gap-2">
@@ -138,6 +153,7 @@ export default function DashboardPage() {
                         name: name.trim(),
                         quantity: Number(quantity)
                       })
+                      await logActivity('imported', name.trim(), Number(quantity))
                     }
                   }
                   fetchItems()
@@ -188,7 +204,7 @@ export default function DashboardPage() {
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                onClick={() => updateQuantity(item.id, item.quantity + 1, item.name)}
                 className="px-2 py-1 bg-green-500 text-white text-sm rounded"
               >
                 +
@@ -196,7 +212,7 @@ export default function DashboardPage() {
               <button
                 onClick={() => {
                   if (item.quantity > 0) {
-                    updateQuantity(item.id, item.quantity - 1)
+                    updateQuantity(item.id, item.quantity - 1, item.name)
                   }
                 }}
                 className="px-2 py-1 bg-red-500 text-white text-sm rounded"
@@ -205,7 +221,7 @@ export default function DashboardPage() {
               </button>
               {userRole === 'admin' && (
                 <button
-                  onClick={() => deleteItem(item.id, item.name)}
+                  onClick={() => deleteItem(item.id, item.name, item.quantity)}
                   className="px-2 py-1 bg-red-700 text-white text-sm rounded"
                 >
                   Delete
