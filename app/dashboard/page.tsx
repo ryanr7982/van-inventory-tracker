@@ -112,6 +112,18 @@ export default function DashboardPage() {
 
   return (
     <div className="p-4">
+      {/* ADMIN USER MANAGEMENT LINK */}
+      {userRole === 'admin' && (
+        <div className="mb-4">
+          <a
+            href="/admin/users"
+            className="inline-block px-4 py-2 bg-blue-700 text-white rounded hover:bg-blue-800"
+          >
+            Admin: User Management
+          </a>
+        </div>
+      )}
+
       <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
 
       <div className="mb-4 flex flex-wrap gap-2">
@@ -254,4 +266,5 @@ export default function DashboardPage() {
     </div>
   )
 }
+
 
