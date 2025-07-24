@@ -8,70 +8,102 @@ const supabase = createClient(
 )
 
 export default function UsersAdminPage() {
-  const [users, setUsers] = useState<any[]>([])
   const [profiles, setProfiles] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      const { data: usersData } = await supabase.rpc('get_all_users') // fallback: query 'auth.users' with RLS
-      const { data: profilesData } = await supabase.from('profiles').select('*')
-      setUsers(usersData || [])
-      setProfiles(profilesData || [])
-      setLoading(false)
-    }
-    fetchUsers()
+    fetchProfiles()
+    // eslint-disable-next-line
   }, [])
 
-  const getRole = (id: string) => profiles.find((p: any) => p.id === id)?.role ?? 'installer'
+  const fetchProfiles = async () => {
+    setLoading(true)
+    setError('')
+    // join with auth.users for email (if you want to show email, see NOTE below)
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, role, created_at')
+      .order('created_at', { ascending: false })
+    setProfiles(data || [])
+    setError(error ? error.message : '')
+    setLoading(false)
+  }
 
-  const handleRoleChange = async (id: string, role: string) => {
-    await supabase.from('profiles').update({ role }).eq('id', id)
-    setProfiles(p => p.map(pr => pr.id === id ? { ...pr, role } : pr))
+  const handleRoleChange = async (id: string, newRole: string) => {
+    setUpdatingId(id)
+    setError('')
+    const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', id)
+    if (error) setError(error.message)
+    await fetchProfiles()
+    setUpdatingId(null)
   }
 
   return (
-    <div className="p-4">
+    <div className="p-4 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">User Management</h1>
+      {error && <div className="mb-2 text-red-600">{error}</div>}
       {loading ? (
-        <p>Loading...</p>
+        <div>Loading...</div>
       ) : (
-        <table className="min-w-full border">
-          <thead>
-            <tr>
-              <th className="px-2 py-1 border">User ID</th>
-              <th className="px-2 py-1 border">Role</th>
-              <th className="px-2 py-1 border">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {profiles.map(user => (
-              <tr key={user.id}>
-                <td className="px-2 py-1 border">{user.id}</td>
-                <td className="px-2 py-1 border">{user.role}</td>
-                <td className="px-2 py-1 border">
-                  {user.role !== 'admin' && (
-                    <button
-                      className="px-2 py-1 bg-blue-500 text-white rounded mr-2"
-                      onClick={() => handleRoleChange(user.id, 'admin')}
-                    >
-                      Make Admin
-                    </button>
-                  )}
-                  {user.role !== 'installer' && (
-                    <button
-                      className="px-2 py-1 bg-gray-500 text-white rounded"
-                      onClick={() => handleRoleChange(user.id, 'installer')}
-                    >
-                      Make Installer
-                    </button>
-                  )}
-                </td>
+        <div className="overflow-x-auto">
+          <table className="min-w-full border text-sm">
+            <thead>
+              <tr>
+                <th className="px-2 py-1 border">User ID</th>
+                <th className="px-2 py-1 border">Role</th>
+                <th className="px-2 py-1 border">Actions</th>
+                <th className="px-2 py-1 border">Created</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {profiles.map(user => (
+                <tr key={user.id}>
+                  <td className="px-2 py-1 border break-all">{user.id}</td>
+                  <td className="px-2 py-1 border capitalize">{user.role}</td>
+                  <td className="px-2 py-1 border">
+                    <div className="flex gap-1 flex-wrap">
+                      {user.role !== 'admin' && (
+                        <button
+                          onClick={() => handleRoleChange(user.id, 'admin')}
+                          className={`px-2 py-1 rounded bg-blue-500 text-white hover:bg-blue-600 ${
+                            updatingId === user.id ? 'opacity-50' : ''
+                          }`}
+                          disabled={updatingId === user.id}
+                        >
+                          Make Admin
+                        </button>
+                      )}
+                      {user.role !== 'installer' && (
+                        <button
+                          onClick={() => handleRoleChange(user.id, 'installer')}
+                          className={`px-2 py-1 rounded bg-gray-600 text-white hover:bg-gray-700 ${
+                            updatingId === user.id ? 'opacity-50' : ''
+                          }`}
+                          disabled={updatingId === user.id}
+                        >
+                          Make Installer
+                        </button>
+                      )}
+                      {/* 
+                      // Uncomment if you want to add deactivate, etc.
+                      <button className="px-2 py-1 rounded bg-red-600 text-white">Deactivate</button>
+                      */}
+                    </div>
+                  </td>
+                  <td className="px-2 py-1 border">
+                    {user.created_at
+                      ? new Date(user.created_at).toLocaleString()
+                      : ''}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   )
 }
+
