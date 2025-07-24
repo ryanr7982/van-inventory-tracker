@@ -9,7 +9,7 @@ const supabase = createClient(
 
 type UserProfile = {
   id: string
-  email: string
+  email: string | null
   role: string
 }
 
@@ -24,27 +24,16 @@ export default function AdminUsersPage() {
     async function fetchUsers() {
       setLoading(true)
       setError('')
-      // 1. Get all users from auth
-      const { data: userList, error: userErr } = await supabase.auth.admin.listUsers()
-      if (userErr) {
-        setError('Could not fetch user list: ' + userErr.message)
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id,email,role')
+        .order('email', { ascending: true })
+      if (error) {
+        setError('Could not fetch profiles: ' + error.message)
         setLoading(false)
         return
       }
-      // 2. Get profiles table (id/role)
-      const { data: profileList, error: profileErr } = await supabase.from('profiles').select('id,role')
-      if (profileErr) {
-        setError('Could not fetch profiles: ' + profileErr.message)
-        setLoading(false)
-        return
-      }
-      // 3. Merge email/id/role
-      const merged: UserProfile[] = (userList?.users || []).map((user: any) => ({
-        id: user.id,
-        email: user.email ?? '',
-        role: profileList?.find((p: any) => p.id === user.id)?.role ?? 'installer',
-      }))
-      setUsers(merged)
+      setUsers(data || [])
       setLoading(false)
     }
     fetchUsers()
@@ -59,45 +48,54 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">User Management</h1>
       {error && <div className="text-red-600 mb-4">{error}</div>}
       {loading ? (
         <p>Loading users...</p>
       ) : (
-        <table className="min-w-full bg-white border rounded shadow">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="py-2 px-4 text-left">Email</th>
-              <th className="py-2 px-4 text-left">Role</th>
-              <th className="py-2 px-4"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map(u => (
-              <tr key={u.id} className="border-t">
-                <td className="py-2 px-4">{u.email}</td>
-                <td className="py-2 px-4">
-                  <select
-                    value={u.role}
-                    disabled={updatingId === u.id}
-                    onChange={e => handleRoleChange(u.id, e.target.value)}
-                    className="border p-1 rounded"
-                  >
-                    <option value="admin">Admin</option>
-                    <option value="installer">Installer</option>
-                  </select>
-                </td>
-                <td className="py-2 px-4">
-                  {updatingId === u.id && <span className="text-sm text-blue-600">Saving...</span>}
-                </td>
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-white border rounded shadow text-sm">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="py-2 px-4 text-left">Email</th>
+                <th className="py-2 px-4 text-left">User ID</th>
+                <th className="py-2 px-4 text-left">Role</th>
+                <th className="py-2 px-4"></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {users.map(u => (
+                <tr key={u.id} className="border-t">
+                  <td className="py-2 px-4 font-mono">{u.email || <span className="text-gray-400 italic">N/A</span>}</td>
+                  <td className="py-2 px-4 font-mono">{u.id}</td>
+                  <td className="py-2 px-4">
+                    <select
+                      value={u.role}
+                      disabled={updatingId === u.id}
+                      onChange={e => handleRoleChange(u.id, e.target.value)}
+                      className="border p-1 rounded"
+                    >
+                      <option value="admin">Admin</option>
+                      <option value="installer">Installer</option>
+                    </select>
+                  </td>
+                  <td className="py-2 px-4">
+                    {updatingId === u.id && <span className="text-xs text-blue-600">Saving...</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
+      <p className="text-xs mt-4 text-gray-500">
+        * User emails are shown if they exist in <code>profiles</code>. All new signups are automatically recorded.
+      </p>
     </div>
   )
 }
+
+
 
 
